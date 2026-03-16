@@ -75,7 +75,6 @@ export default function StudentMaterials() {
                 src={`${selectedMaterial.filePath}#toolbar=0`}
                 className="w-full h-full border-0"
                 title={selectedMaterial.title}
-                sandbox="allow-scripts allow-same-origin"
               />
             </div>
           </div>
