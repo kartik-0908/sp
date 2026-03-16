@@ -22,7 +22,7 @@ async function main() {
       console.log("Role updated to admin.");
     }
 
-  } catch (error) {
+  } catch (error: any) {
     if (error.message && error.message.includes("email")) {
        console.log("Creating with fake email then updating it back to 'admin'");
        // Some versions might require email format 
