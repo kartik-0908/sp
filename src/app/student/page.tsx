@@ -1,19 +1,19 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
 export default function StudentDashboard() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [stats, setStats] = useState({ totalDays: 0, presentDays: 0, materials: 0 });
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    if (session?.user.role === "admin" && status === "authenticated") router.push("/admin");
-  }, [session, status, router]);
+    if (!isPending && !session) router.push("/login");
+    if (!isPending && session && session.user.role === "admin") router.push("/admin");
+  }, [session, isPending, router]);
 
   useEffect(() => {
     async function fetchStats() {
@@ -35,7 +35,7 @@ export default function StudentDashboard() {
     if (session?.user.role === "student") fetchStats();
   }, [session]);
 
-  if (status === "loading") {
+  if (isPending) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 

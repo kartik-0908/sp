@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, useRef } from "react";
 
@@ -16,7 +16,7 @@ interface Material {
 }
 
 export default function ManageMaterials() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [materials, setMaterials] = useState<Material[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -30,9 +30,9 @@ export default function ManageMaterials() {
   const [filterSubject, setFilterSubject] = useState("all");
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    if (session?.user.role !== "admin" && status === "authenticated") router.push("/student");
-  }, [session, status, router]);
+    if (!isPending && !session) router.push("/login");
+    if (!isPending && session && session.user.role !== "admin") router.push("/student");
+  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session?.user.role === "admin") fetchMaterials();
@@ -100,7 +100,7 @@ export default function ManageMaterials() {
     return (bytes / (1024 * 1024)).toFixed(1) + " MB";
   }
 
-  if (status === "loading") {
+  if (isPending) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 

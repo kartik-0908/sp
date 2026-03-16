@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
@@ -17,7 +17,7 @@ interface AttendanceRecord {
 }
 
 export default function MarkAttendance() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [searchQuery, setSearchQuery] = useState("");
@@ -28,9 +28,9 @@ export default function MarkAttendance() {
   const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    if (session?.user.role !== "admin" && status === "authenticated") router.push("/student");
-  }, [session, status, router]);
+    if (!isPending && !session) router.push("/login");
+    if (!isPending && session && session.user.role !== "admin") router.push("/student");
+  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session?.user.role === "admin") fetchStudents();
@@ -100,7 +100,7 @@ export default function MarkAttendance() {
     setSaved(true);
   }
 
-  if (status === "loading") {
+  if (isPending) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 

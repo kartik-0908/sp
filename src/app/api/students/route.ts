@@ -1,17 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
 import bcrypt from "bcryptjs";
 
 export async function GET() {
-  const session = await auth();
+  const session = await getSession();
   if (!session || session.user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
   const students = await prisma.user.findMany({
     where: { role: "student" },
-    select: { id: true, name: true, email: true, class: true, subject: true, phone: true, createdAt: true },
+    select: { id: true, name: true, username: true, email: true, class: true, subject: true, phone: true, createdAt: true, plainPassword: true },
     orderBy: { name: "asc" },
   });
 
@@ -38,7 +38,7 @@ function generatePassword(): string {
 }
 
 export async function POST(req: NextRequest) {
-  const session = await auth();
+  const session = await getSession();
   if (!session || session.user.role !== "admin") {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -57,13 +57,16 @@ export async function POST(req: NextRequest) {
   const student = await prisma.user.create({
     data: {
       name,
-      email: username,
+      username: username,
+      displayUsername: username,
+      email: `${username}@successpoint.com`,
       password: hashedPassword,
+      plainPassword: plainPassword,
       role: "student",
       class: studentClass,
       subject,
     },
-    select: { id: true, name: true, email: true, class: true, subject: true },
+    select: { id: true, name: true, username: true, class: true, subject: true },
   });
 
   return NextResponse.json(

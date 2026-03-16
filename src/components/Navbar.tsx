@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
-import { useSession, signOut } from "next-auth/react";
+import { useRouter } from "next/navigation";
+import { useSession, signOut } from "@/lib/auth-client";
 
 export default function Navbar() {
   const { data: session } = useSession();
+  const router = useRouter();
 
   if (!session) return null;
 
   const isAdmin = session.user.role === "admin";
+
+  async function handleSignOut() {
+    await signOut();
+    router.push("/login");
+  }
 
   return (
     <nav className="bg-indigo-700 text-white shadow-lg">
@@ -54,7 +61,7 @@ export default function Navbar() {
               {session.user.name} ({session.user.role})
             </span>
             <button
-              onClick={() => signOut({ callbackUrl: "/login" })}
+              onClick={handleSignOut}
               className="bg-indigo-800 hover:bg-indigo-900 px-3 py-2 rounded-md text-sm"
             >
               Logout

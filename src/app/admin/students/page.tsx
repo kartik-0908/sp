@@ -1,27 +1,29 @@
 "use client";
 
-import { useSession } from "next-auth/react";
+import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 interface Student {
   id: string;
   name: string;
+  username?: string;
   email: string;
   class: string;
   subject: string | null;
   phone: string | null;
   createdAt: string;
+  plainPassword?: string | null;
 }
 
 interface CreatedStudent {
   name: string;
-  email: string;
+  username: string;
   plainPassword: string;
 }
 
 export default function ManageStudents() {
-  const { data: session, status } = useSession();
+  const { data: session, isPending } = useSession();
   const router = useRouter();
   const [students, setStudents] = useState<Student[]>([]);
   const [showForm, setShowForm] = useState(false);
@@ -37,9 +39,9 @@ export default function ManageStudents() {
   const [loadingAttendance, setLoadingAttendance] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    if (status === "unauthenticated") router.push("/login");
-    if (session?.user.role !== "admin" && status === "authenticated") router.push("/student");
-  }, [session, status, router]);
+    if (!isPending && !session) router.push("/login");
+    if (!isPending && session && session.user.role !== "admin") router.push("/student");
+  }, [session, isPending, router]);
 
   useEffect(() => {
     if (session?.user.role === "admin") {
@@ -103,7 +105,7 @@ export default function ManageStudents() {
     const data = await res.json();
     setCreatedStudent({
       name: data.name,
-      email: data.email,
+      username: data.username,
       plainPassword: data.plainPassword,
     });
     setForm({ name: "", class: "9", subject: "both" });
@@ -125,7 +127,7 @@ export default function ManageStudents() {
     return "-";
   }
 
-  if (status === "loading") {
+  if (isPending) {
     return <div className="flex items-center justify-center min-h-screen">Loading...</div>;
   }
 
@@ -145,11 +147,11 @@ export default function ManageStudents() {
         <div className="bg-green-50 border border-green-200 rounded-xl p-6 mb-6">
           <h2 className="text-lg font-semibold text-green-800 mb-3">Student Created Successfully!</h2>
           <p className="text-sm text-green-700 mb-4">
-            Share these login credentials with the student. The password cannot be viewed again.
+            Share these login credentials with the student.
           </p>
           <div className="bg-white rounded-lg p-4 space-y-2 text-sm">
             <p><span className="font-medium text-gray-700">Name:</span> {createdStudent.name}</p>
-            <p><span className="font-medium text-gray-700">Username:</span> <code className="bg-gray-100 px-2 py-1 rounded">{createdStudent.email}</code></p>
+            <p><span className="font-medium text-gray-700">Username:</span> <code className="bg-gray-100 px-2 py-1 rounded">{createdStudent.username}</code></p>
             <p><span className="font-medium text-gray-700">Password:</span> <code className="bg-gray-100 px-2 py-1 rounded">{createdStudent.plainPassword}</code></p>
           </div>
           <button
@@ -226,6 +228,7 @@ export default function ManageStudents() {
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Username</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Class</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Subject</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Password</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Today&apos;s Attendance</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
@@ -241,7 +244,7 @@ export default function ManageStudents() {
               students.map((student) => (
                 <tr key={student.id} className="hover:bg-gray-50">
                   <td className="px-6 py-4 font-medium">{student.name}</td>
-                  <td className="px-6 py-4 text-gray-600 font-mono text-sm">{student.email}</td>
+                  <td className="px-6 py-4 text-gray-600 font-mono text-sm">{student.username}</td>
                   <td className="px-6 py-4">
                     <span className="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-sm">
                       Class {student.class}
@@ -252,6 +255,7 @@ export default function ManageStudents() {
                       {subjectLabel(student.subject)}
                     </span>
                   </td>
+                  <td className="px-6 py-4 text-gray-600 font-mono text-sm">{student.plainPassword || 'Hidden'}</td>
                   <td className="px-6 py-4">
                     <div className="flex gap-2">
                       <button
