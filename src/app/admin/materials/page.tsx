@@ -29,6 +29,8 @@ export default function ManageMaterials() {
   const [filterClass, setFilterClass] = useState("all");
   const [filterSubject, setFilterSubject] = useState("all");
 
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+
   useEffect(() => {
     if (!isPending && !session) router.push("/login");
     if (!isPending && session && session.user.role !== "admin") router.push("/student");
@@ -115,6 +117,31 @@ export default function ManageMaterials() {
           {showForm ? "Cancel" : "+ Upload Material"}
         </button>
       </div>
+
+      {selectedMaterial && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold">{selectedMaterial.title}</h2>
+              <button
+                onClick={() => setSelectedMaterial(null)}
+                className="text-gray-500 hover:text-gray-800 p-2"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100">
+              <iframe
+                src={`${selectedMaterial.filePath}#toolbar=0`}
+                className="w-full h-full border-0"
+                title={selectedMaterial.title}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       {showForm && (
         <div className="bg-white rounded-xl shadow p-6 mb-6">
@@ -217,7 +244,7 @@ export default function ManageMaterials() {
               <div className="flex justify-between items-start mb-3">
                 <h3 className="font-semibold text-lg">{material.title}</h3>
                 <button
-                  onClick={() => handleDelete(material.id)}
+                   onClick={() => handleDelete(material.id)}
                   className="text-red-500 hover:text-red-700 text-sm"
                 >
                   Delete
@@ -234,13 +261,12 @@ export default function ManageMaterials() {
               <p className="text-gray-500 text-sm mb-3">
                 {material.fileName} ({formatSize(material.fileSize)})
               </p>
-              <a
-                href={material.filePath}
-                download
+              <button
+                onClick={() => setSelectedMaterial(material)}
                 className="text-indigo-600 hover:text-indigo-800 text-sm font-medium"
               >
-                Download
-              </a>
+                View Material
+              </button>
             </div>
           ))
         )}

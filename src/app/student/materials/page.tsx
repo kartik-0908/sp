@@ -21,6 +21,8 @@ export default function StudentMaterials() {
   const [materials, setMaterials] = useState<Material[]>([]);
   const [filterSubject, setFilterSubject] = useState("all");
 
+  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null);
+
   useEffect(() => {
     if (!isPending && !session) router.push("/login");
     if (!isPending && session && session.user.role === "admin") router.push("/admin");
@@ -54,6 +56,31 @@ export default function StudentMaterials() {
     <div className="max-w-7xl mx-auto px-4 py-8">
       <h1 className="text-3xl font-bold mb-2">Study Materials</h1>
       <p className="text-gray-600 mb-6">Class {session?.user.class} - Math & Science</p>
+
+      {selectedMaterial && (
+        <div className="fixed inset-0 bg-black/60 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl w-full max-w-5xl h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex justify-between items-center p-4 border-b">
+              <h2 className="text-xl font-bold">{selectedMaterial.title}</h2>
+              <button
+                onClick={() => setSelectedMaterial(null)}
+                className="text-gray-500 hover:text-gray-800 p-2"
+                title="Close"
+              >
+                ✕
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100">
+              <iframe
+                src={`${selectedMaterial.filePath}#toolbar=0`}
+                className="w-full h-full border-0"
+                title={selectedMaterial.title}
+                sandbox="allow-scripts allow-same-origin"
+              />
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="bg-white rounded-xl shadow p-4 mb-6">
         <label className="block text-sm font-medium text-gray-700 mb-1">Filter by Subject</label>
@@ -91,13 +118,12 @@ export default function StudentMaterials() {
               <p className="text-gray-400 text-xs mb-3">
                 Uploaded: {new Date(material.createdAt).toLocaleDateString("en-IN")}
               </p>
-              <a
-                href={material.filePath}
-                download
+              <button
+                onClick={() => setSelectedMaterial(material)}
                 className="inline-block bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 text-sm"
               >
-                Download
-              </a>
+                View
+              </button>
             </div>
           ))
         )}

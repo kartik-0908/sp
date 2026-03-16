@@ -37,6 +37,8 @@ function generatePassword(): string {
   return password;
 }
 
+import { auth } from "@/lib/auth";
+
 export async function POST(req: NextRequest) {
   const session = await getSession();
   if (!session || session.user.role !== "admin") {
@@ -52,25 +54,40 @@ export async function POST(req: NextRequest) {
 
   const username = generateUsername(name);
   const plainPassword = generatePassword();
-  const hashedPassword = await bcrypt.hash(plainPassword, 10);
+  const email = `${username}@successpoint.com`;
 
-  const student = await prisma.user.create({
-    data: {
-      name,
-      username: username,
-      displayUsername: username,
-      email: `${username}@successpoint.com`,
-      password: hashedPassword,
-      plainPassword: plainPassword,
-      role: "student",
-      class: studentClass,
-      subject,
-    },
-    select: { id: true, name: true, username: true, class: true, subject: true },
-  });
+  try {
+    const authRes = await auth.api.signUpEmail({
+      body: {
+        email,
+        password: plainPassword,
+        name,
+      }
+    });
 
-  return NextResponse.json(
-    { ...student, plainPassword },
-    { status: 201 }
-  );
+    if (!authRes || !authRes.user) {
+      return NextResponse.json({ error: "Failed to create authentication user" }, { status: 500 });
+    }
+
+    const student = await prisma.user.update({
+      where: { id: authRes.user.id },
+      data: {
+        username: username,
+        displayUsername: username,
+        plainPassword: plainPassword,
+        role: "student",
+        class: studentClass,
+        subject,
+      },
+      select: { id: true, name: true, username: true, class: true, subject: true },
+    });
+
+    return NextResponse.json(
+      { ...student, plainPassword },
+      { status: 201 }
+    );
+  } catch (error: any) {
+    console.error("Error creating student:", error);
+    return NextResponse.json({ error: "Could not create student" }, { status: 500 });
+  }
 }
