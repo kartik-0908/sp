@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { writeFile, mkdir } from "fs/promises";
-import path from "path";
+import { put } from "@vercel/blob";
 
 export async function GET(req: NextRequest) {
   const session = await getSession();
@@ -50,15 +49,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
   }
 
-  const bytes = await file.arrayBuffer();
-  const buffer = Buffer.from(bytes);
-
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
-
-  const uniqueName = `${Date.now()}-${file.name}`;
-  const filePath = path.join(uploadDir, uniqueName);
-  await writeFile(filePath, buffer);
+  const blob = await put(`materials/${Date.now()}-${file.name}`, file, {
+    access: "public",
+  });
 
   const material = await prisma.material.create({
     data: {
@@ -66,7 +59,7 @@ export async function POST(req: NextRequest) {
       class: materialClass,
       subject,
       fileName: file.name,
-      filePath: `/uploads/${uniqueName}`,
+      filePath: blob.url,
       fileSize: file.size,
     },
   });

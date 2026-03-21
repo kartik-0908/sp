@@ -1,8 +1,7 @@
 import { NextResponse } from "next/server";
 import { getSession } from "@/lib/session";
 import { prisma } from "@/lib/prisma";
-import { unlink } from "fs/promises";
-import path from "path";
+import { del } from "@vercel/blob";
 
 export async function DELETE(
   _req: Request,
@@ -21,9 +20,9 @@ export async function DELETE(
   }
 
   try {
-    await unlink(path.join(process.cwd(), "public", material.filePath));
+    await del(material.filePath);
   } catch {
-    // file may already be deleted
+    // blob may already be deleted
   }
 
   await prisma.material.delete({ where: { id } });
